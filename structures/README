@@ -1,0 +1,9 @@
+Structures for
+"Functional domain interactions in a nonribosomal peptide synthetase monitored
+by FRET"
+Tom Morrell 5/2017
+
+_ave structures contain the average dye and egfp position
+_linker_ave structures where the A-PCP linker was also sampled
+_anac_ave structures where the An-Ac linker was also sampled
+_point structures contain all sampled points as dummy atoms for visualization

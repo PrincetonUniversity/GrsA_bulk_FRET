@@ -1,0 +1,201 @@
+* Program to sample over dye dihedrals
+* Running for job {name}
+* Tom Morrell 2/2012
+
+set prot = {prot}
+set pdb = {prot}_min
+
+read RTF card flex name ../top_all36_prot.rtf
+read PARA card flex name ../par_all36_prot.prm
+read rtf card append name ../top_all36_cgenff.rtf
+read para card flex append name ../par_all36_cgenff.prm
+stream ../cafl.str
+
+open unit 12 read card name ../@prot.psf
+read psf card unit 12
+close unit 12
+
+open unit 12 card read name ../@pdb.pdb
+read coor pdb offs -{offset} unit 12
+read coor pdb offs -{offset} unit 12 comp
+close unit 12
+
+skip usere
+
+! implicit solvation
+update atom cdie eps 1 cutnb 21 ctofnb 18 ctonnb 16 switch vswitch
+
+! implicit solvation
+GBMV GEOM BETA -12 EPSILON 80 BUFR 0.2 MEM 20 CUTA 20  - 
+ALFRQ 1  P1 0.45 P2 1.25 P3 0.65 P6 8.0 -
+WTYP 1 NPHI 5 CORR 1 SHIFT -0.1 SLOPE 0.9 -
+FAST 1 SGBFRQ 4 SXD 0.3
+
+define dbackbone sele (resname CAFL) .and. (type C .or. type O .or. type CA -
+.or. type HA .or. type N .or. type HN) end
+!At first rotation, these atoms will be fixed
+define dfix sele (resname CAFL) .and.  (type C .or. type O .or. type CA .or. type CB -
+.or. type HA .or. type N .or. type HN .or. type HB1 .or. type HB2 .or. type S4 -
+.or. type N4 .or. type C40 .or. type C41 .or. type O13 .or. type O11 -
+.or. type C42 .or. type C43 .or. type H29 .or. type H53 -
+.or. type H54 .or. type C1 .or. type C2 .or. type C3 .or. type C4 -
+.or. type H1 .or. type H2 .or. type H3 .or. type H4 .or. type H5 .or. type H6 -
+.or. type H7 .or. type H8 ) end 
+!What we actually use-these residues will always be free to rotate
+define dyefree sele (resname CAFL) .and. .not. dfix end
+
+set seg = {segi}
+set res = {dye}
+set fil = -1
+
+!fix everything except dye
+cons fix sele dbackbone .or. .not. resid @res end
+!CONS HARM BESTFIT MASS FORCE 500.0 sele resid @res .and. dyefix end
+!Keep central double bond linear
+!set forc = 100.0
+!cons DIHE @seg @res CD1 @seg @res CC1 @seg @res CC2 @seg @res CC3 FORC @forc MIN 166.0 PERI 1
+!cons DIHE @seg @res CC1 @seg @res CC2 @seg @res CC3 @seg @res CD1' FORC @forc MIN 175.0 PERI 1
+!cons DIHE @seg @res NE1 @seg @res CD1 @seg @res CC1 @seg @res CC2 FORC @forc MIN -18.0 PERI 1
+!cons DIHE @seg @res NE1' @seg @res CD1' @seg @res CC3 @seg @res CC2 FORC @forc MIN 161.0 PERI 1
+!cons DIHE @seg @res CG @seg @res CD1 @seg @res CC1 @seg @res CC2 FORC @forc MIN 118.0 PERI 1
+!cons DIHE @seg @res CG' @seg @res CD1' @seg @res CC3 @seg @res CC2 FORC @forc MIN -18.0 PERI 1
+
+set 1 0
+set 2 0
+set 3 0
+set 4 0
+set 5 0
+set 6 0
+set counter 0
+
+energy
+set eini ?ENER
+calc tole @eini + 1000
+
+open write file unit 41 name @prot_8.@res.dcd
+traj iwrite 41 nwrite 1 nfile 730
+!!bad hard coding
+
+label rotate
+
+incr counter by 1
+
+if 1 lt 2 goto loop1
+
+set 1 0
+if 2 lt 2 goto loop2
+
+set 2 0
+if 3 lt 2 goto loop3
+
+set 3 0
+if 4 lt 2 goto loop4
+
+set 4 0
+if 5 lt 2 goto loop5
+
+set 5 0
+if 6 lt 2 goto loop6 
+
+!unconstrain
+cons fix sele none end
+cons cldh
+
+stop
+
+label mini
+open write unit 12 card name temp@prot_8@res.pdb
+write coor pdb unit 12
+close unit 12
+
+GBMV clear
+
+mini sd nstep 50
+
+! implicit solvation
+update atom cdie eps 1 cutnb 21 ctofnb 18 ctonnb 16 switch vswitch
+
+! implicit solvation
+GBMV GEOM BETA -12 EPSILON 80 BUFR 0.2 MEM 20 CUTA 20  -
+ALFRQ 1  P1 0.45 P2 1.25 P3 0.65 P6 8.0 -
+WTYP 1 NPHI 5 CORR 1 SHIFT -0.1 SLOPE 0.9 -
+FAST 1 SGBFRQ 4 SXD 0.3
+
+mini sd   nstep 200 nprint 100 tolg 0.05
+
+if ?ENER .gt. @tole goto reject
+
+incr fil by 1
+
+traj write
+
+goto rotate
+
+
+!go back before minimization
+label reject
+coor init sele all end
+open read unit 22 card name temp@prot_8@res.pdb
+read coor pdb offset -{offset} unit 22
+close unit 22
+
+goto rotate
+
+label loop1
+
+coor axis sele atom @seg @res C4 end sele atom @seg @res C5 end
+coor rota axis PHI 120 sele resi @res .and. dyefree end
+incr 1 by 1
+goto mini
+
+label loop2
+
+coor axis sele atom @seg @res C3 end sele atom @seg @res C4 end
+coor rota axis PHI 120 sele resi @res .and. (dyefree .or. type C4 .or. type H7 - 
+.or. type H8) end
+incr 2 by 1
+goto mini
+
+label loop3
+
+coor axis sele atom @seg @res C2 end sele atom @seg @res C3 end
+coor rota axis PHI 120 sele resi @res .and. (dyefree .or. type C4 .or. type H7 - 
+.or. type H8 .or. type C3 .or. type H5 .or. type H6) end
+incr 3 by 1
+goto mini
+
+label loop4
+
+coor axis sele atom @seg @res C1 end sele atom @seg @res C2 end
+coor rota axis PHI 120 sele resi @res .and. (dyefree .or. type C4 .or. type H7 -
+.or. type H8 .or. type C3 .or. type H5 .or. type H6 -
+.or. type C2 .or. type H4 .or. type H3 ) end
+incr 4 by 1
+goto mini
+
+label loop5
+
+coor axis sele atom @seg @res CB end sele atom @seg @res SG end
+coor rota axis PHI 120 sele resi @res .and. (dyefree .or. type C4 .or. type H7 -
+.or. type H8 .or. type C3 .or. type H5 .or. type H6 -
+.or. type C2 .or. type H4 .or. type H3 .or. type C1 .or. type H2 .or. type H1 -
+.or. type S4 .or. type N4 .or. type C40 .or. type C41 .or. type O13 .or. type O11 -
+.or. type C42 .or. type C43 .or. type H52 .or. type H29 .or. type H53 -
+.or. type H54 ) end
+incr 5 by 1
+goto mini
+
+label loop6
+
+coor axis sele atom @seg @res CA end sele atom @seg @res CB end
+coor rota axis PHI 120 sele resi @res .and. (dyefree .or. type C4 .or. type H7 -
+.or. type H8 .or. type C3 .or. type H5 .or. type H6 -
+.or. type C2 .or. type H4 .or. type H3 .or. type C1 .or. type H2 .or. type H1 -
+.or. type S4 .or. type N4 .or. type C40 .or. type C41 .or. type O13 .or. type O11 -
+.or. type C42 .or. type C43 .or. type H52 .or. type H29 .or. type H53 -
+.or. type H54 .or. type CB .or. type HB1 .or. type HB2) end
+incr 6 by 1
+goto mini
+
+
+stop

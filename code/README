@@ -1,0 +1,20 @@
+Contains scripts and input files for
+"Functional domain interactions in a nonribosomal peptide synthetase monitored
+by FRET"
+Tom Morrell 8/2016
+
+-minimize.inp - Set up structure and do energy minimization
+-sampling.inp - Run with SPSMF.py using command python SPSMF.py sampling grsa_min 16 152
+-correct_dcd.inp - Correct number of accepted conformations in dcd file
+-dye_dist.inp - Calculate dye positions
+-det_dye.py - Process dye positions using command python det_dye.py input
+-preplinker.inp - Set up linker
+-ld.inp - Run dynamics for linker
+-extract_pdb.py - Pull out individual pdb files from trajectory
+-align_egfp.inp - Add egfp to model
+-sampling_egfp - sample egfp conformations - you'll need to make a nolinker
+file which has structure without linker
+-correct_dcd_egfp.inp - Correct number of accepted egfp positions
+-correl_egfp.inp - Calculate egfp positions
+-det_egfp.py - Process egfp positions using command python det_egfp.py
+input_gfp

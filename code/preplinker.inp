@@ -1,0 +1,56 @@
+* Program to take input pdb and producs psf
+* Tom Morrell 6/2011
+
+set prot = linker
+
+read RTF card flex name top_all36_prot.rtf
+read PARA card flex name par_all36_prot.prm
+read rtf card append name top_all36_cgenff.rtf
+read para card flex append name par_all36_cgenff.prm
+stream cafl.str
+
+
+open unit 12 card read name @prot.pdb
+read sequ pdb unit 12
+
+generate FIRS ace LAST CT3 @prot setup
+
+read coor pdb offset -610 unit 12
+close unit 12
+
+!take the pdb coordinates and add default 
+!coordinates and parameters asnecesary
+ic fill preserve
+ic gene
+ic param
+ic build
+
+!minimize everything
+mini sd nsteps 500 nprint 100
+mini abnr nsteps 1000 nprint 100
+
+! implicit solvation
+update atom cdie eps 1 cutnb 21 ctofnb 18 ctonnb 16 switch vswitch
+
+! implicit solvation
+GBMV GEOM BETA -12 EPSILON 80 BUFR 0.2 MEM 20 CUTA 20  - 
+ALFRQ 1  P1 0.45 P2 1.25 P3 0.65 P6 8.0 -
+WTYP 1 NPHI 5 CORR 1 SHIFT -0.1 SLOPE 0.9 -
+FAST 1 SGBFRQ 4 SXD 0.3
+
+update inbfrq -1
+
+mini sd nsteps 500 nprint 100
+mini abnr nsteps 1000 nprint 100
+
+!save results
+open write unit 12 card name @prot.psf
+write psf card unit 12
+close unit 12
+
+open write unit 12 card name @prot_min.pdb
+write coor pdb unit 12
+close unit 12
+
+
+stop

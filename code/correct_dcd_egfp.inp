@@ -1,0 +1,43 @@
+* Correct the size of a dcd file
+* Tom Morrell 9/2011
+
+set prot = grsa_pcp_egfp
+set psf = grsa_pcp_egfp
+
+
+read RTF card flex name top_all36_prot.rtf
+read PARA card flex name par_all36_prot.prm
+read rtf card append name top_all36_cgenff.rtf
+read para card flex append name par_all36_cgenff.prm
+stream cafl.str
+
+
+open unit 12 read card name @psf.psf
+read psf card unit 12
+close unit 12
+
+open unit 12 card read name @prot_min.pdb
+read coor pdb offset -16 unit 12
+read coor pdb offset -16 unit 12 comp
+close unit 12
+
+!Correct DCD
+set gframes = 758
+set fil = 0
+
+open write file unit 41 name @prot_corr.dcd
+open read file unit 30 name @prot.dcd
+traj first 30 nunit 1 iwrite 41 nfile @gframes stop @gframes
+
+label add
+
+traj read
+
+incr fil by 1
+
+traj write
+
+if fil .lt. @gframes goto add
+
+stop
+

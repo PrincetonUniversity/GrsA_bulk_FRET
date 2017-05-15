@@ -1,0 +1,14 @@
+#PBS -N {filename}
+#PBS -q parallel
+#PBS -l ncpus=16
+#PBS -M tmorrell@princeton.edu
+#PBS -m ea
+#PBS -j oe
+#PBS -l walltime=200:00:00
+#PBS -r n
+#PBS -V
+#
+cd $PBS_O_WORKDIR
+echo $PBS_O_WORKDIR
+mpirun -np 16 /usr/local/charmm/c36a2/exec/gnu/charmm < \
+my.stdin > {filename}.log ZZZ={filename}.inp

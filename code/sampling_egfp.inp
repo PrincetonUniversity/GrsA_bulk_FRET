@@ -1,0 +1,96 @@
+* Program to extract md conformations
+* graft, and determine clash
+* Tom Morrell 7/2013
+
+read RTF card flex name top_all36_prot.rtf
+read PARA card flex name par_all36_prot.prm
+read rtf card append name top_all36_cgenff.rtf
+read para card flex append name par_all36_cgenff.prm
+stream cafl.str
+
+open unit 12 read card name grsa_pcp_egfp.psf
+read psf card unit 12
+close unit 12
+
+open unit 12 card read name grsa_pcp_egfp_min.pdb
+read coor pdb offs -16 unit 12 comp
+close unit 12
+
+set frame = 1
+set fil = 0
+
+energy comp
+
+set eini ?ENER
+calc tole @eini + 1000
+
+open write file unit 41 name grsa_pcp_egfp.dcd
+traj iwrite 41 nwrite 1 nfile 1000
+!bad hard coding of number of frames
+
+label top
+
+if @frame .gt. 999 goto fin
+
+!read in linker
+open unit 12 card read name pdbfiles/@frame.pdb
+read coor pdb offset -16 unit 12
+
+!align to A domain
+coor orie mass rms sele (resid 613:614 )  end
+
+!save aligned version
+open write unit 12 card name simulationfiles/templinker@frame.pdb
+write coor sele resid 613:621 end pdb unit 12
+close unit 12
+
+!read in a domain, which is now aligned
+open read unit 22 card name grsa_pcp_nolinker.pdb
+read coor pdb offset -16 unit 22
+close unit 22
+
+!align egfp
+coor orie mass rms sele (resid 620:621 )  end
+
+!save aligned version
+open write unit 12 card name simulationfiles/temptoegfp@frame.pdb
+write coor sele resid 16:622 end pdb unit 12
+close unit 12
+
+!bring in egfp coordinates
+coor copy sele resid 622:849 end
+
+!cons fix sele .not. resid 597:629 end
+!612:624 end
+ 
+mini sd nstep 100
+
+
+!orient all to reference
+coor orie mass rms sele (resid 77:142 .or. resid 185:202 .or. resid 271:275 -
+.or. resid 298:305 .or. resid 320:329 .or. resid 332:337 .or. resid 350:386 -
+.or. resid 408:428 .and. type CA)  end
+
+energy
+
+open write unit 12 card name simulationfiles/temp@frame.pdb
+write coor pdb unit 12
+close unit 12
+
+increase frame by 1
+
+if ?ENER .gt. @tole goto reject
+
+incr fil by 1
+
+traj write
+
+goto top
+
+!go back
+label reject
+
+goto top
+
+label fin
+stop

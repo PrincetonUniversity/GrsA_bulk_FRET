@@ -1,0 +1,45 @@
+* Read in PSF and CHARMM coordinate set 
+* energy minimize the structure
+* to be used with fluorvis script
+*
+read RTF card flex name top_all36_prot.rtf
+read PARA card flex name par_all36_prot.prm
+read rtf card append name top_all36_cgenff.rtf
+read para card flex append name par_all36_cgenff.prm
+stream cafl.str
+
+
+! Read in PSF and Coordinate file
+open read formatted unit 27 name linker.psf
+read psf card unit 27
+open read formatted unit 27 name linker_min.pdb
+read coor pdb offset -610 unit 27
+
+! implicit solvation
+update atom cdie eps 1 cutnb 21 ctofnb 18 ctonnb 16 switch vswitch
+
+! implicit solvation
+GBMV GEOM BETA -12 EPSILON 80 BUFR 0.2 MEM 20 CUTA 20  - 
+ALFRQ 1  P1 0.45 P2 1.25 P3 0.65 P6 8.0 -
+WTYP 1 NPHI 5 CORR 1 SHIFT -0.1 SLOPE 0.9 -
+FAST 1 SGBFRQ 4 SXD 0.3
+
+
+update inbfrq -1
+
+!MD Sampling
+shake bonh tol 1E-08 param
+scalar fbeta set 10 select .not. type H* end
+
+open write unformatted unit 13 name linker_ld.dcd
+open write formatted unit 14 name linker_ld.rst
+
+!initial
+
+dynamics leap lang start timestep 0.002 nstep 2500000 -
+INBFREQ -1 IASORS 1 IASVEL 1 NPRINT 2500 IPRFRQ 2500 NSAVC 2500 -
+ILBFRQ 50 RBUFFER 0.0 TBATH 300.0 ECHECK 20 ISEED 1918371 -
+firstt 300.0 finalt 300.0 bycb - 
+iunvel -1 iunread -1 iunwri 14 iuncrd 13 kunit -1 -
+
+stop

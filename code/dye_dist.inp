@@ -1,0 +1,56 @@
+set dye = 152
+
+set prot = grsa_pcp
+set pdb = grsa_pcp_min
+
+read RTF card flex name top_all36_prot.rtf
+read PARA card flex name par_all36_prot.prm
+read rtf card append name top_all36_cgenff.rtf
+read para card flex append name par_all36_cgenff.prm
+stream cafl.str
+
+open unit 12 read card name @prot.psf
+read psf card unit 12
+close unit 12
+
+open unit 12 card read name @pdb.pdb
+read coor pdb offs -16 unit 12
+read coor pdb offs -16 unit 12 comp
+close unit 12
+
+open unit 12 unform read name @prot_corr.dcd
+
+
+cons fix sele none end
+cons cldh
+
+open write formatted unit 25 name @prot.coords.txt
+open write formatted unit 26 name @prot.comcoords.txt
+open write formatted unit 27 name @prot.ener.txt
+
+correl maxs 10 maxa 50000 maxt 100000
+
+enter dye atom xyz sele atom * @dye C14 end
+enter dyec atom xyz sele resid @dye end mass
+enter dene energy
+
+traj firstu 12 nunit 1
+
+mantime dene dini
+
+write dye card unit 25
+*Dye center carbon
+*
+
+write dyec card unit 26
+*Dye center of mass
+*
+
+write dene card unit 27
+*Configuration energy
+*
+
+end
+
+
+stop

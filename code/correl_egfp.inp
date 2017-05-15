@@ -1,0 +1,66 @@
+* Read in PSF and CHARMM trajectory 
+* extract energy and dye coordinates
+*
+
+set prot = grsa_pcp_egfp
+set psf = grsa_pcp_egfp
+
+read RTF card flex name top_all36_prot.rtf
+read PARA card flex name par_all36_prot.prm
+read rtf card append name top_all36_cgenff.rtf
+read para card flex append name par_all36_cgenff.prm
+stream cafl.str
+
+open unit 12 read card name @psf.psf
+read psf card unit 12
+close unit 12
+open unit 30 unform read name @prot_corr.dcd
+
+open unit 12 card read name @prot_min.pdb
+read coor pdb offset -16 unit 12
+read coor pdb offset -16 unit 12 comp
+close unit 12
+
+cons fix sele none end
+cons cldh
+
+open write formatted unit 25 name @prot.dye.txt
+open write formatted unit 26 name @prot.egfp_com.txt
+open write formatted unit 27 name @prot.ener.txt
+open write formatted unit 28 name @prot.egfp.txt
+open write formatted unit 29 name @prot.egfp_vec.txt
+
+correl maxs 20 maxa 50000 maxt 100000
+
+enter dye atom xyz sele atom @prot 152 CC3 end
+enter gfpc atom xyz sele resid 622:849 end mass
+enter gfpg atom xyz sele resid 683:685 end mass
+enter gfpv vect XYZ @prot 684 OH @prot 685 N 
+enter dene energy
+
+traj firstu 30 nunit 1
+
+mantime dene dini
+
+write dye card unit 25
+*Dye center carbon
+*
+ 
+write gfpc card unit 26 
+*gfp center of mass
+*
+  
+write dene card unit 27
+*Configuration energy
+*
+ 
+write gfpg card unit 28 
+*gfp center of mass fluorophore
+*
+ 
+write gfpv card unit 29
+*gfp vector along approximate transition dipole
+*
+ 
+end
+

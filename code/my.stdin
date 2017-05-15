@@ -1,0 +1,7 @@
+* Stream to real file given as ZZZ=filename on commandline. Note that the
+* filename
+* cannot consist of a mixture of upper- and lower-case letters. 
+*
+stream @ZZZ
+stop
+
