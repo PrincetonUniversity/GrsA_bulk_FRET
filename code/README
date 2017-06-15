@@ -1,6 +1,5 @@
 Contains scripts and input files for
-"Functional domain interactions in a nonribosomal peptide synthetase monitored
-by FRET"
+"FRET monitoring of a nonribosomal peptide synthetase" Nature Chemical Biology 2017
 Tom Morrell 8/2016
 
 -minimize.inp - Set up structure and do energy minimization
